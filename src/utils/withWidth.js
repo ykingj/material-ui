@@ -15,11 +15,18 @@ export default function withWidth(options = {}) {
   return (MyComponent) => {
     return class WithWidth extends Component {
       state = {
-        width: null,
+        /**
+         * For the server side rendering,
+         * let's set the width for the slower environment.
+         */
+        width: SMALL,
       };
 
-      componentDidMount() {
-        this.updateWidth();
+      componentWillMount() {
+        // We make sure that we are in a browser environment.
+        if (typeof window !== 'undefined') {
+          this.updateWidth();
+        }
       }
 
       componentWillUnmount() {
@@ -53,26 +60,10 @@ export default function withWidth(options = {}) {
       }
 
       render() {
-        const width = this.state.width;
-
-        /**
-         * When rendering the component on the server,
-         * we have no idea about the screen width.
-         * In order to prevent blinks and help the reconciliation
-         * we are not rendering the component.
-         *
-         * A better alternative would be to send client hints.
-         * But the browser support of this API is low:
-         * http://caniuse.com/#search=client%20hint
-         */
-        if (width === null) {
-          return null;
-        }
-
         return (
           <EventListener target="window" onResize={this.handleResize}>
             <MyComponent
-              width={width}
+              width={this.state.width}
               {...this.props}
             />
           </EventListener>
